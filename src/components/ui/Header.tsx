@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import useScrollTrigger from '@material-ui/core/useScrollTrigger';
@@ -7,6 +7,14 @@ import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import useMediaQuery from '@material-ui/core/useMediaQuery';
+import { useTheme } from '@material-ui/core/styles';
+import SwipeableDrawer from '@material-ui/core/SwipeableDrawer';
+import IconButton from '@material-ui/core/IconButton';
+import MenuIcon from '@material-ui/icons/Menu';
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
 
 import logo from '../../assets/logo.svg';
 import { Button } from '@material-ui/core';
@@ -21,13 +29,35 @@ interface Props {
 	children: React.ReactElement;
 }
 
+interface IRoute {
+	name: string;
+	link: string;
+	activeIndex: number;
+	selectedIndex?: number;
+	ariaOwns?: string;
+	ariaPopup?: 'true';
+	mouseOver?: any;
+}
+
 const useStyles = makeStyles((theme: any) => ({
 	toolbarMargin: {
 		...theme.mixins.toolbar,
-		marginBottom: '3em'
+		marginBottom: '3em',
+		[theme.breakpoints.down("md")]: {
+			marginBottom: '2em'
+		},
+		[theme.breakpoints.down("xs")]: {
+			marginBottom: '1.25em'
+		}
 	},
 	logo: {
-		height: '7em'
+		height: '8em',
+		[theme.breakpoints.down("md")]: {
+			height: '7em'
+		},
+		[theme.breakpoints.down("xs")]: {
+			height: '5.5em'
+		}
 	},
 	logoContainer: {
 		padding: 0,
@@ -61,6 +91,35 @@ const useStyles = makeStyles((theme: any) => ({
 		'&:hover': {
 			opacity: 1
 		}
+	},
+	drawerIconContainer: {
+		marginLeft: 'auto',
+		'&:hover': {
+			backgroundColor: 'transparent'
+		},
+	},
+	drawerIcon: {
+		height: '50px',
+		width: '50px',
+	},
+	drawer: {
+		backgroundColor: theme.palette.common.blue
+	},
+	drawerItem: {
+		...theme.typography.tab,
+		color: 'white',
+		opacity: 0.7
+	},
+	drawerItemEstimate: {
+		backgroundColor: theme.palette.common.orange
+	},
+	drawerItemSelected: {
+		'&.MuiListItemText-root': {
+			opacity: 1
+		},		
+	},
+	appBar: {
+		zIndex: theme.zIndex.modal + 1
 	}
 }));
 
@@ -79,165 +138,223 @@ function ElevationScroll(props: Props) {
 
 const Header = () => {
 	const classes = useStyles();
+	const theme = useTheme();
+	const iOS = window && /iPad|iPhone|iPod/.test(navigator.userAgent);
+	const matches = useMediaQuery(theme.breakpoints.down("md"));
+
+	const [openDrawer, setOpenDrawer] = useState(false);
 	const [value, setValue] = useState(0);
 	const [anchorEl, setAnchorEl] = useState(null);
-	const [open, setOpen] = useState(false);
+	const [openMenu, setOpenMenu] = useState(false);
 	const [selectedIndex, setSelectedIndex] = useState(0);
 
-	const handleChange = (e: any, value: number) => {
-		setValue(value);
+	const handleChange = (e: any, newValue: number) => {
+		setValue(newValue);
 	}
 
 	const handleClick = (e: any) => {
 		setAnchorEl(e.currentTarget);
-		setOpen(true);
+		setOpenMenu(true);
 	}
 
 	const handleClose = (e: any) => {
 		setAnchorEl(null);
-		setOpen(false);
+		setOpenMenu(false);
 	}
 
 	const handleMenuItemClick = (e: any, i: number) => {
 		setAnchorEl(null);
-		setOpen(false);
+		setOpenMenu(false);
 		setSelectedIndex(i);
 	}
 
-	const menuOptions = [
+	const menuOptions: IRoute[] = useMemo(() => [
 		{
 			name: 'Services',
-			link: '/services'
+			link: '/services',
+			activeIndex: 1,
+			selectedIndex: 0
 		},
 		{
 			name: 'Custom Software Development',
-			link: '/customsoftware'
+			link: '/customsoftware',
+			activeIndex: 1,
+			selectedIndex: 1
 		},
 		{
 			name: 'Mobile App Development',
-			link: '/mobileapps'
+			link: '/mobileapps',
+			activeIndex: 1,
+			selectedIndex: 2
 		},
 		{
 			name: 'Website Development',
-			link: '/websites'
+			link: '/websites',
+			activeIndex: 1,
+			selectedIndex: 3
 		}
-	]
+	], []);
+
+	const routes: IRoute[] = useMemo(() => [
+		{
+			name: 'Home',
+			link: '/',
+			activeIndex: 0
+		},
+		{
+			name: 'Services',
+			link: '/services',
+			activeIndex: 1,
+			ariaOwns: anchorEl ? 'simple-menu' : undefined,
+			ariaPopup: anchorEl ? 'true' : undefined,
+			mouseOver: handleClick,
+		},
+		{
+			name: 'The Revolution',
+			link: '/revolution',
+			activeIndex: 2
+		},
+		{
+			name: 'About Us',
+			link: '/about',
+			activeIndex: 3
+		},
+		{
+			name: 'Contact Us',
+			link: '/contactus',
+			activeIndex: 4
+		}
+	], [anchorEl]);
 
 	useEffect(() => {
-		switch (window.location.pathname) {
-			case "/":
-				if (value !== 0) {
-					setValue(0);
-				}
-				break;
-			case "/services":
-				if (value !== 1) {
-					setValue(1);
-					setSelectedIndex(0);
-				}
-				break;
-			case "/customsoftware":
-				if (value !== 1) {
-					setValue(1);
-					setSelectedIndex(1);
-				}
-				break;
-			case "/mobileapps":
-				if (value !== 1) {
-					setValue(1);
-					setSelectedIndex(2);
-				}
-				break;
-			case "/websites":
-				if (value !== 1) {
-					setValue(1);
-					setSelectedIndex(3);
-				}
-				break;
-			case "/revolution":
-				if (value !== 2) {
-					setValue(2);
-				}
-				break;
-			case "/about":
-				if (value !== 3) {
-					setValue(3);
-				}
-				break;
-			case "/contactus":
-				if (value !== 4) {
-					setValue(4);
-				}
-				break;
-			case "/estimate":
-				if (value !== 5) {
-					setValue(5);
-				}
-				break;
-			default:
-				break;
-		}
-	}, [value])
+		[...menuOptions, ...routes].forEach((route: IRoute) => {
+			switch (window.location.pathname) {
+				case `${route.link}`:
+					if (value !== route.activeIndex) {
+						setValue(route.activeIndex);
+
+						if (route.selectedIndex && route.selectedIndex !== selectedIndex) {
+							setSelectedIndex(route.selectedIndex);
+						}
+					}
+					break;
+				default: break;
+			}
+		})
+
+	}, [value, menuOptions, selectedIndex, routes]);
+
+	const drawer = (
+		<Fragment>
+			<SwipeableDrawer
+				disableBackdropTransition={!iOS}
+				disableDiscovery={iOS}
+				open={openDrawer}
+				onClose={() => setOpenDrawer(false)}
+				onOpen={() => setOpenDrawer(true)}
+				classes={{ paper: classes.drawer }}>
+				<div className={classes.toolbarMargin} />
+				<List
+					disablePadding>
+					{routes.map((route) => (
+						<ListItem
+							onClick={() => { setOpenDrawer(false); setValue(route.activeIndex); }}
+							classes={{selected: classes.drawerItemSelected}}
+							selected={value === route.activeIndex}
+							divider
+							button
+							component={Link}
+							to={route.link} key={`${route}${route.activeIndex}`}>
+							<ListItemText
+								className={classes.drawerItem}
+								disableTypography>
+								{route.name}
+							</ListItemText>
+						</ListItem>
+					))}
+
+					<ListItem
+						onClick={() => { setOpenDrawer(false); setValue(5); }}
+						classes={{root: classes.drawerItemSelected, selected: classes.drawerItemSelected}}
+						selected={value === 5}
+						divider
+						button
+						className={classes.drawerItemEstimate}
+						component={Link}
+						to="/estimate">
+						<ListItemText
+							className={classes.drawerItem}
+							disableTypography>
+							Free Estimate
+						</ListItemText>
+					</ListItem>
+				</List>
+			</SwipeableDrawer>
+			<IconButton
+				className={classes.drawerIconContainer}
+				onClick={() => setOpenDrawer(!openDrawer)}
+				disableRipple>
+				<MenuIcon
+					className={classes.drawerIcon} />
+			</IconButton>
+		</Fragment>
+	);
+
+	const tabs = (
+		<Fragment>
+			<Tabs
+				value={value}
+				className={classes.tabContainer}
+				onChange={handleChange} indicatorColor="primary">
+				{routes.map((route, index) => (
+					<Tab
+						className={classes.tab}
+						component={Link}
+						to={route.link}
+						label={route.name}
+						aria-owns={route.ariaOwns}
+						aria-haspopup={route.ariaPopup}
+						onMouseOver={route.mouseOver}
+						key={`${route}${index}`} />
+				))}
+			</Tabs>
+			<Button variant="contained" color="secondary"
+				className={classes.button}>
+				Free Estimate
+			</Button>
+			<Menu
+				id="simple-menu"
+				anchorEl={anchorEl}
+				open={openMenu}
+				onClose={handleClose}
+				classes={{ paper: classes.menu }}
+				MenuListProps={{ onMouseLeave: handleClose }}
+				elevation={0}
+				keepMounted
+				style={{zIndex: 1302}}>
+				{menuOptions.map((option, index) => (
+					<MenuItem
+						key={`${option}${index}`}
+						onClick={(e: any) => { handleMenuItemClick(e, index); setValue(1); handleClose(e) }}
+						selected={index === selectedIndex && value === 1}
+						component={Link} to={option.link}
+						classes={{ root: classes.menuItem }}>
+						{option.name}
+					</MenuItem>
+				))}
+			</Menu>
+		</Fragment>
+	);
 
 	return (
 		<Fragment>
 			<ElevationScroll>
-				<AppBar position="fixed" color="primary">
+				<AppBar position="fixed" color="primary" className={classes.appBar}>
 					<Toolbar disableGutters={true}>
 						<Button component={Link} to="/" className={classes.logoContainer} onClick={() => setValue(0)} disableRipple>
 							<img src={logo} alt="company logo" className={classes.logo} />
 						</Button>
-						<Tabs
-							value={value}
-							className={classes.tabContainer}
-							onChange={handleChange} indicatorColor="primary">
-							<Tab
-								className={classes.tab}
-								label="Home"
-								component={Link} to="/" />
-							<Tab
-								aria-owns={anchorEl ? "simple-menu" : undefined}
-								aria-haspopup={anchorEl ? "true" : undefined}
-								onMouseOver={(e: any) => handleClick(e)}
-								className={classes.tab}
-								label="Services"
-								component={Link} to="/services" />
-							<Tab
-								className={classes.tab}
-								label="The Revolution"
-								component={Link} to="/revolution" />
-							<Tab
-								className={classes.tab}
-								label="About Us"
-								component={Link} to="/about" />
-							<Tab
-								className={classes.tab}
-								label="Contact Us"
-								component={Link} to="/contactus" />
-						</Tabs>
-						<Button variant="contained" color="secondary"
-							className={classes.button}>
-							Free Estimate
-						</Button>
-						<Menu
-							id="simple-menu"
-							anchorEl={anchorEl}
-							open={open}
-							onClose={handleClose}
-							classes={{ paper: classes.menu }}
-							MenuListProps={{ onMouseLeave: handleClose }}
-							elevation={0}>
-							{menuOptions.map((option, index) => (
-								<MenuItem
-									key={option.name}
-									onClick={(e: any) => { handleMenuItemClick(e, index); setValue(1); handleClose(e) }}
-									selected={index === selectedIndex && value === 1}
-									component={Link} to={option.link}
-									classes={{ root: classes.menuItem }}>
-									{option.name}
-								</MenuItem>
-							))}
-						</Menu>
+						{matches ? drawer : tabs}
 					</Toolbar>
 				</AppBar>
 			</ElevationScroll>
